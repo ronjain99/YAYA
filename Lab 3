@@ -1,7 +1,11 @@
 x=0
 while x<100:
-    if x%3 == 0:
+    if x%3 == 0 and x%5 == 0:
+        print('Bingo!'.format(x))
+    elif x%3 == 0:
         print('{} is divisible by 3'.format(x))
+    elif x%5 == 0:
+        print('{} is divisble by 5'.format(x))
     else:
         print('{} is not divisible by 3'.format(x))
     x=x+1
