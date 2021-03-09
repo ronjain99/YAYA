@@ -1,0 +1,16 @@
+import math as m
+a = int(input("Enter integer value for a: "))
+b = int(input("Enter integer value for b: "))
+c = int(input("Enter integer value for c: "))
+D = b**2 - 4*a*c
+if D<0:
+    print("There are no roots for the quadratic equation")
+elif D==0:
+    N=1
+    x=-b/(2*a)
+    print("This quadratic has {} solution, of {}".format(N, x))
+else:
+    N=2
+    x =  (-b + m.sqrt(D))/(2*a)
+    x1 = (-b - m.sqrt(D))/(2*a)
+    print ("This quadratic has {} solutions, of {} and {}".format(N,x,x1))
