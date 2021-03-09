@@ -1,0 +1,7 @@
+x=0
+while x<100:
+    if x%3 == 0:
+        print('{} is divisible by 3'.format(x))
+    else:
+        print('{} is not divisible by 3'.format(x))
+    x=x+1
