@@ -1,0 +1,27 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+rainfallData = pd.read_csv('rainfall-1.csv')
+print(rainfallData.head())
+rainfall = rainfallData['Monthly Precipitation Total (millimetres)'].values
+print(rainfall)
+plt.hist(rainfall)
+plt.show()
+N = len(rainfall)
+print(N)
+sum = 0
+print(rainfall[24])
+for i in range(0,N):
+    if i%12 == 0:
+        sum += rainfall[i]
+print(sum/(N/12))
+highestRainfall = 0
+for i in range(0,N):
+    if i%12 == 9 and rainfall[i]>highestRainfall:
+        highestRainfall=rainfall[i]
+print(highestRainfall)
+lowestRainfall=1000
+for i in range(0,N):
+    if i%12 == 11 and lowestRainfall>rainfall[i]:
+        lowestRainfall = rainfall[i]
+print(lowestRainfall)
