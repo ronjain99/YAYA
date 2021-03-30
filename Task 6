@@ -1,0 +1,21 @@
+import datetime
+track = pd.read_csv('track.csv')
+time = track['time'].values
+print(time[0])
+time0obj = datetime.datetime.strptime(time[0],'%Y-%m-%d %H:%M:%S+00:00')
+time1obj = datetime.datetime.strptime(time[1],'%Y-%m-%d %H:%M:%S+00:00')
+N = len(track)
+
+#timeobj = []
+#for i in range(0,N):
+ #   timeobj.append(datetime.datetime.strptime(time[i],'%Y-%m-%d %H:%M:%S+00:00'))
+#array = []
+#for i in range(0,N-1):
+ #   array.append(timeobj[i+1] - timeobj[i])
+#print(array)
+timeDiff = np.zeros(N-1)
+for i in range(0,N-1):
+   time0str = datetime.datetime.strptime(time[i],'%Y-%m-%d %H:%M:%S+00:00')
+   time1str = datetime.datetime.strptime(time[i+1],'%Y-%m-%d %H:%M:%S+00:00')
+   timeDiff[i] = (time1str - time0str).seconds
+print(timeDiff)
