@@ -1,0 +1,14 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+track = pd.read_csv('track.csv')
+lat = track['lat'].values
+lon = track['lon'].values
+ele = track['ele'].values
+print(track)
+print(latitude,longitude,elevation)
+y = latitude
+x = longitude
+plt.plot(x,y)
+time = track['time'].values
