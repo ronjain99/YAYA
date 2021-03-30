@@ -1,0 +1,13 @@
+import pandas as pd
+import numpy as np
+QuizTest = pd.read_csv('QuizTest.csv')
+print(QuizTest.head())
+output = QuizTest['Output'].values
+print(output)
+print(type(output))
+N = len(output)
+print(output[0])
+sum = 0
+for i in range(0,N):
+    sum+=output[i]
+print(sum)
