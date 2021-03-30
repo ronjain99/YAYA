@@ -1,0 +1,25 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+track = pd.read_csv('track.csv')
+lat = track['lat'].values
+lon = track['lon'].values
+ele = track['ele'].values
+print(track)
+N = len(track)
+latchange = np.zeros(N-1)
+for i in range(0,N-1):
+    latchange[i] = lat[i+1]-lat[i]
+print(latchange)
+lonchange = np.zeros(N-1)
+for i in range(0,N-1):
+    lonchange[i] = lon[i+1]-lon[i]
+print(lonchange)
+distances = np.zeros(N-1)
+for i in range(0,N-1):
+    a = (np.sin(latchange[i]/2)**2) + (np.cos(lat[i])*np.cos(lat[i+1])*np.sin(lonchange[i]/2)**2)
+    c = np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    R = 6371000
+    distances[i] = R*c
+print(distances)
