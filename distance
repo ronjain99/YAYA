@@ -1,0 +1,24 @@
+from machine import Pin, SoftI2C
+from time import sleep
+from APDS9960LITE import APDS9960LITE
+import ultrasonic
+import matplotlib.pyplot
+#Initialise I2C bus
+i2c = SoftI2C(scl=Pin("PB13"), sda=Pin("PB14"))
+ultrasonic_sensor = ultrasonic.HCSR04("D13", "D12")
+#Initialise APDS9960
+apds9960=APDS9960LITE(i2c)	#Create APDS9960 sensor object
+apds9960.prox.enableSensor()	#Send I2C command to enable sensor
+sleep(0.1)	#Let sensor measurment stabilise before starting loop
+N=100
+ultraArray = np.zeros(N)
+photoArray = np.zeros(N)
+for i in range(0,N):
+    ultraDist = ultrasonic_sensor.distance_mm()
+    ultraArray[i] = ultraDist
+    proximity_measurement = apds9960.prox.proximityLevel	#Read the proximity
+    photoArray[i] = proximity_measurement
+    sleep(0.2)
+plt.plot(ultraArray)
+plt.plot(photoArray)
+plt.show()
