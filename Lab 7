@@ -1,0 +1,31 @@
+import numpy as np
+def return42():
+    return print(42)
+return42()
+def square(x):
+    return print(x**2)
+square(4)
+def product(x,y):
+    a = x*y
+    return print(a)
+product(7,9)
+def haversine(lat1,lat2,lonchange,):
+    a = (np.sin((lat2 - lat1) / 2) ** 2) + (np.cos(lat1) * np.cos(lat2) * np.sin(lonchange) ** 2)
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    R = 6371000
+    d = R * c
+    return print(d)
+haversine(67.3,84.5,77.7)
+
+N= 1000
+array = np.linspace(2,N,N-1)
+
+def primes(N):
+    array = np.linspace(2, N, N - 1)
+    for t in range(0,N-1):
+        if array[t] != 0:
+            for i in range(0,N-1):
+                if array[i] % array[t] == 0 and array[i] != array[t]:
+                    array[i] = 0
+    return print(array)
+primes(764)
