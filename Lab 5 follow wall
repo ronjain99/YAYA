@@ -1,0 +1,61 @@
+from machine import Pin
+from time import sleep
+from module.ultrasonic import HCSR04
+from module.motor import Motor
+from pyb import millis,elapsed_millis
+
+# Pin definitions
+sensor_ir = Pin("A0", Pin.IN)
+sensor_ultrasonic = HCSR04("D13", "D12")
+motor_left = Motor("left", "D6", "D7", "D4")
+motor_right = Motor("right", "D8", "D9", "D5")
+
+def stop():
+    motor_left.duty(0)
+    motor_right.duty(0)
+
+def moveForward():
+    motor_left.set_forwards()
+    motor_right.set_forwards()
+
+    motor_left.duty(67)
+    motor_right.duty(65)
+
+def slightRight():
+    motor_left.set_forwards()
+    motor_right.set_forwards()
+
+    motor_left.duty(77)
+    motor_right.duty(65)
+
+def slightLeft():
+    motor_left.set_forwards()
+    motor_right.set_forwards()
+
+    motor_left.duty(67)
+    motor_right.duty(75)
+
+def stop():
+    motor_left.duty(0)
+    motor_right.duty(0)
+
+pwm_left = 0
+pwm_right = 0
+dir_left = 0
+dir_right = 0
+
+state_list = ['DRIVING','FOLLOW_WALL','STOPPED']
+
+state = state_list[1]
+start_time = millis()
+
+if state == state_list[1]:
+    while sensor_ir.value() == 0:
+        if sensor_ultrasonic.distance_mm() > 400:
+            moveForward()
+        elif sensor_ultrasonic.distance_mm() > 200 and sensor_ultrasonic.distance_mm() <= 400:
+            slightLeft()
+        elif sensor_ultrasonic.distance_mm() < 200:
+            slightRight()
+        else:
+            moveForward()
