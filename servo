@@ -1,0 +1,17 @@
+from machine import Pin
+from time import sleep
+from module.ultrasonic import HCSR04
+from module.motor import Motor
+from pyb import millis,elapsed_millis
+from pyb import Servo
+
+# Pin definitions
+sensor_ir = Pin("A0", Pin.IN)
+sensor_ultrasonic = HCSR04("D13", "D12")
+motor_left = Motor("left", "D6", "D7", "D4")
+motor_right = Motor("right", "D8", "D9", "D5")
+servo = Servo(1)
+
+for desired_angle in range(-70,70,+1):
+    servo.angle(desired_angle)
+    sleep(0.01)
