@@ -1,0 +1,123 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+from scipy.interpolate.interpolate import interp1d
+import scipy.signal as sig
+# Task 2
+track = pd.read_csv('track.csv')
+lat = track['lat'].values
+lon = track['lon'].values
+ele = track['ele'].values
+print(lat,lon,ele)
+# Task 3
+plt.plot(lon,lat,'b.')
+plt.show()
+# Task 4
+time = track['time'].values
+# Task 5
+print(time[0])
+# Task 6
+N = len(track)
+timeDiff = np.zeros(N - 1)
+for i in range(0, N - 1):
+    time0str = datetime.datetime.strptime(time[i], '%Y-%m-%d %H:%M:%S+00:00')
+    time1str = datetime.datetime.strptime(time[i + 1], '%Y-%m-%d %H:%M:%S+00:00')
+    timeDiff[i] = (time1str - time0str).seconds
+plt.plot(timeDiff,'rx')
+plt.show() # There are gaps in the data
+# Task 7
+latchange = np.zeros(N-1)
+for i in range(0,N-1):
+    latchange[i] = lat[i+1]-lat[i]
+lonchange = np.zeros(N-1)
+for i in range(0,N-1):
+    lonchange[i] = lon[i+1]-lon[i]
+distances = np.zeros(N-1)
+for i in range(0,N-1):
+    a = (np.sin(latchange[i]/2)**2) + (np.cos(lat[i])*np.cos(lat[i+1])*np.sin(lonchange[i]/2)**2)
+    c = 2*np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    R = 6371000
+    distances[i] = R*c
+# Task 9
+AveSpeed = np.zeros(N-1)
+for i in range(0,N-1):
+    AveSpeed[i] = distances[i]/timeDiff[i]
+# Task 10
+plt.plot(AveSpeed)
+plt.show() #Unrealistic
+# Task 11
+timesecs = np.zeros(N)
+for i in range(1,N):
+    timesecs[i] = timesecs[i-1]+timeDiff[i-1]
+timesecsnew = np.linspace(0,9912,9913)
+f=  interp1d(timesecs,lon)
+g = interp1d(timesecs,lat)
+h = interp1d(timesecs,ele)
+plt.plot(lon,lat,'b.')
+plt.plot(f(timesecsnew),g(timesecsnew),'rx')
+plt.axis([151.572,151.58,-32.882,-32.8785])
+plt.show()
+lonnew = f(timesecsnew)
+latnew = g(timesecsnew)
+elenew = h(timesecsnew)
+N = len(timesecsnew)
+latchange = np.zeros(N-1)
+for i in range(0,N-1):
+    latchange[i] = latnew[i+1]-latnew[i]
+lonchange = np.zeros(N-1)
+for i in range(0,N-1):
+    lonchange[i] = lonnew[i+1]-lonnew[i]
+distances = np.zeros(N-1)
+for i in range(0,N-1):
+    a = (np.sin(latchange[i]/2)**2) + (np.cos(latnew[i])*np.cos(latnew[i+1])*np.sin(lonchange[i]/2)**2)
+    c = np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    R = 6371000
+    distances[i] = R*c
+    AveSpeed = distances# Time Difference is always 1
+timesecsnew1 = np.zeros(N-1)
+for i in range(0,N-1):
+    timesecsnew1[i] = timesecsnew[i+1]
+print(timesecsnew1)
+plt.plot(timesecsnew1,AveSpeed)
+plt.show()
+plt.plot(timesecsnew,elenew)
+plt.show()
+# Task 12
+elechange = np.zeros(N-1)
+for i in range(0,N-1):
+    elechange[i] = elenew[i+1] - elenew[i]
+m=100
+g=9.8
+E = np.zeros(N)
+for i in range(0,N-1):
+    if elechange[i] > 0:
+        E[i+1] = m*g*elechange[i]
+plt.plot(E)
+plt.show()
+# Task 13
+sum = 0
+for i in range(0,N):
+    sum += E[i]
+AvePower = sum/N
+print(AvePower)
+#Task 14
+[b,a] = sig.butter(2,0.01)
+eleFiltered = sig.lfilter(b,a,elenew)
+plt.plot(elenew,'b.')
+plt.plot(eleFiltered,'r.')
+plt.show()
+elechangefiltered = np.zeros(N-1)
+for i in range(0,N-1):
+    elechangefiltered[i] = eleFiltered[i+1] - eleFiltered[i]
+m=100
+g=9.8
+E = np.zeros(N)
+for i in range(0,N-1):
+    if elechangefiltered[i] > 0:
+        E[i+1] = m*g*elechangefiltered[i]
+sum = 0
+for i in range(0,N):
+    sum += E[i]
+AvePower = sum/N
+print(AvePower)
