@@ -1,0 +1,31 @@
+import numpy as np
+import rootfinding as rf
+np.random.seed(1)
+def diceprob(k,N):
+    A = np.random.randint(1,7,N)
+    B = np.random.randint(1,7,N)
+    C = np.zeros(N)
+    for i in range(0,N):
+        C[i] = B[i] + A[i]
+    kcount = 0
+    for i in range(0,N):
+        if C[i] == k:
+            kcount += 1
+    probability = kcount/N
+    return probability
+
+np.random.seed(1)
+for k in range(2,13):
+    print(k, diceprob(k, 100))
+
+def f(x):
+    y = x**2.5 -25
+    return y
+root = rf.secant(f)
+print(root)
+
+def df(x):
+    y = 2.5*(x**1.5)
+    return y
+root = rf.newton(f,df)
+print(root)
