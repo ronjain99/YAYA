@@ -1,0 +1,59 @@
+import numpy as np
+import matplotlib.pyplot as plt
+x = np.array([  [4,5,6],[7,8,9],[10,11,12]  ])
+print(x[0,0])
+print(x[1,2])
+print(x[2,:])
+print(x[0:2,0:2])
+x = np.ones([10,10])
+print(x)
+x[1:9,1:9] = 0
+print(x)
+plt.imshow(x,cmap="Greys")
+plt.xticks([])
+plt.yticks([])
+plt.show()
+# Task 3
+r = 3
+c = 2
+N = 4
+M = 10
+x = np.ones([M,M],int)
+x[r:r+N,c:c+N] = 0
+x[r+1:r+N-1,c+1:c+N-1] = 1
+print(x)
+plt.imshow(x,cmap="Greys")
+plt.show()
+x = np.ones([M,M],int)
+for i in range(0,M):
+    for s in range(0,M):
+        if i==r and c<=s<=c+N-1:
+            x[i,s] = 0
+        elif i==r+N-1 and c<=s<=c+N-1:
+            x[i,s] = 0
+        elif r<=i<=r+N-1 and s == c:
+            x[i, s] = 0
+        elif r<=i<=r+N-1 and s == c+N-1:
+            x[i, s] = 0
+print(x)
+plt.imshow(x,cmap="Greys")
+plt.show()
+
+x = np.zeros([12,10],int)
+xmin = -5
+xmax = 5
+ymin = -2
+ymax = 10
+
+xval = 4
+yval = 5
+
+row = ymax-1-yval
+col = xval+xmax
+
+x[row,col] = 1
+print(x)
+x = np.zeros([200,200])
+
+
+
