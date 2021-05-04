@@ -2,6 +2,8 @@ from pyb import ADC
 from machine import Pin
 from motor import Motor
 from ultrasonic import HCSR04
+from pyb import Servo
+from time import sleep
 
 # PID Controller Variables
 error = 0.0
@@ -26,6 +28,11 @@ motor_right = Motor("right", "D8", "D9", "D5")
 motor_right.set_forwards()
 # Ultrasonic setup
 sensor_ultrasonic = HCSR04("D13", "D12")
+#servo setup
+servo = Servo(1)
+for desired_angle in range(50,50,-1):
+    servo.angle(desired_angle)
+    sleep(0.01)
 # Error as a measurement of distance from the centre of line
 # error < 0: left
 # error > 0: right
