@@ -2,7 +2,6 @@ from pyb import ADC
 from machine import Pin
 from motor import Motor
 from ultrasonic import HCSR04
-from pyb import Servo
 from time import sleep
 
 # PID Controller Variables
@@ -29,13 +28,10 @@ motor_right.set_forwards()
 # Ultrasonic setup
 sensor_ultrasonic = HCSR04("D13", "D12")
 #servo setup
-servo = Servo(1)
-for desired_angle in range(50,50,-1):
-    servo.angle(desired_angle)
-    sleep(0.01)
 # Error as a measurement of distance from the centre of line
 # error < 0: left
 # error > 0: right
+
 def error():
     test = [0,0,0,0]
 
@@ -77,54 +73,45 @@ def error():
 
 # main code
 while True:
-    if sensor_ultrasonic.distance_mm() > 100:
-        motor_left.duty(Duty[0])
-        motor_right.duty(Duty[1])
+    motor_left.duty(Duty[0])
+    motor_right.duty(Duty[1])
 
-        P = error()
-        I += P
-        D = P - prevError
-        PID = (Kp * P) + (Ki * I) + (Kd * D)
+    P = error()
+    I += P
+    D = P - prevError
+    PID = (Kp * P) + (Ki * I) + (Kd * D)
 
 
-        Duty[0] += PID
-        Duty[1] -= PID
+    Duty[0] += PID
+    Duty[1] -= PID
 
-        if Duty[0] < 50:
-            Duty[0] = 50
-        elif Duty[0] > 100:
-            Duty[0] = 100
-        if Duty[1] < 50:
-            Duty[1] = 50
-        elif Duty[1] > 100:
-            Duty[1] = 100
+    if Duty[0] < 50:
+        Duty[0] = 50
+    elif Duty[0] > 100:
+        Duty[0] = 100
+    if Duty[1] < 50:
+        Duty[1] = 50
+    elif Duty[1] > 100:
+        Duty[1] = 100
 
-        print("Left:", Duty[0], "Right:", Duty[1], "Error:", P, "PID:", PID)
+    print("Left:", Duty[0], "Right:", Duty[1], "Error:", P, "PID:", PID)
 
-        prevError = P
-    else:
-        test = [0, 0, 0, 0]
-
-        adc_A1 = ADC(Pin('A1'))
-        adc_A2 = ADC(Pin('A2'))
-        adc_A3 = ADC(Pin('A3'))
-        adc_A4 = ADC(Pin('A4'))
-
-        w1 = adc_A1.read()
-        w2 = adc_A2.read()
-        w3 = adc_A3.read()
-        w4 = adc_A4.read()
-
-        if w1 > 1000:
-            test[0] = 1
-        if w2 > 1000:
-            test[1] = 1
-        if w2 > 1000:
-            test[2] = 1
-        if w4 > 1000:
-            test[3] = 1
-        while test[0] != 0 and test[1] != 1 and test[2] != 1 and test[3] != 0:
-            motor_left.duty(-80)
-            motor_right.duty(80)
+    prevError = P
+    if 0 < sensor_ultrasonic.distance_mm() < 120:
+        motor_left.set_backwards()
+        motor_right.set_forwards()
+        motor_left.duty(65)
+        motor_right.duty(65)
+        sleep(.5)
         motor_left.duty(0)
         motor_right.duty(0)
+
+        while error() < -1 or error() > 1:
+            motor_left.set_backwards()
+            motor_right.set_forwards()
+            motor_left.duty(65)
+            motor_right.duty(65)
+
+        motor_left.duty(0)
+        motor_right.duty(0)
+        sleep(3)
