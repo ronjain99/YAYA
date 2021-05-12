@@ -1,0 +1,101 @@
+from machine import Pin
+from motor import Motor
+from pyb import ADC
+from time import sleep
+from ultrasonic import HCSR04
+from pyb import Servo
+
+adc_A1 = ADC(Pin('A1'))
+adc_A2 = ADC(Pin('A2'))
+adc_A3 = ADC(Pin('A3'))
+adc_A4 = ADC(Pin('A4'))
+adc_A5 = ADC(Pin('A5'))
+
+servo = Servo(1)
+
+motor_left = Motor("left", "D6", "D7", "D4")
+motor_left.set_forwards()
+motor_right = Motor("right", "D8", "D9", "D5")
+motor_right.set_forwards()
+sensor_ultrasonic = HCSR04("D13", "D12")
+preverror = 0
+error = 0
+# while True:
+#     print(adc_A3.read())
+#     sleep(0.2)
+
+dutyleft = 68
+dutyright = 66
+while True:
+    w1 = adc_A1.read()
+    w2 = adc_A2.read()
+    w3 = adc_A3.read()
+    w4 = adc_A4.read()
+    w5 = adc_A5.read()
+
+    if w1 > 500:
+        error = -2
+
+    if w2 > 240:
+        error = -1
+
+    if w4 > 260:
+        error = 1
+
+    if w5 > 500:
+        error = 2
+
+    if w3 > 240:
+        error = error/2
+
+
+    P = error
+    D = error - preverror
+    dutyleft = 68 + 2*P
+    dutyright = 66 - 2*P
+    motor_left.set_forwards()
+    motor_right.set_forwards()
+    motor_right.duty(dutyright)
+    motor_left.duty(dutyleft)
+    preverror = error
+
+    if sensor_ultrasonic.distance_mm() < 120:
+        motor_left.set_forwards()
+        motor_right.set_backwards()
+        motor_right.duty(65)
+        motor_left.duty(65)
+        sleep(0.5)
+        motor_right.duty(0)
+        motor_left.duty(0)
+        sleep(0.2)
+        while w3 < 240:
+            w3 = adc_A3.read()
+            motor_right.duty(65)
+            motor_left.duty(65)
+        motor_left.duty(0)
+        motor_right.duty(0)
+
+#
+# while w3 < 240:
+#     w1 = adc_A1.read()
+#     w2 = adc_A2.read()
+#     w3 = adc_A3.read()
+#     w4 = adc_A4.read()
+#     w5 = adc_A5.read()
+#     # error = 0
+#     # if w1 > 500:
+#     #     error = -3
+#     # if w2 > 240:
+#     #     error = -1
+#     # if w4 > 260:
+#     #     error = 1
+#     # if w5 > 500:
+#     #     error = 3
+#     # if w3 > 230:
+#     #     error = error/2
+#     motor_left.set_forwards()
+#     motor_right.set_backwards()
+#     motor_right.duty(65)
+#     motor_left.duty(65)
+# motor_left.duty(0)
+# motor_right.duty(0)
