@@ -1,26 +1,19 @@
 from machine import SoftI2C,Pin
 
 from time import sleep
-from module.APDS9960LITE import APDS9960LITE
+from APDS9960LITE import APDS9960LITE
 #from module.ultrasonic import HCSR04
 
 
 # Initialise I2C bus
-i2c = SoftI2C(scl=Pin("PB13"), sda=Pin("PB14"))
+i2c = SoftI2C(scl=Pin("D11"), sda=Pin("D10"))
 #ultrasonic_sensor = HCSR04("D13", "D12")
 # Initialise APDS9960
 apds9960 = APDS9960LITE(i2c)        # Create APDS9960 sensor object
 apds9960.prox.enableSensor()	    # Send I2C command to enable sensor
-
+sleep(0.1)
 while True:
-
-    sleep(0.1)	                        # Let sensor measurement stabilise before starting loop
-
-    N = 100
-
-    #for i in range(0, N):
-        #ultraDist = ultrasonic_sensor.distance_mm()
-        #print(ultraDist)
     proximity_measurement = apds9960.prox.proximityLevel
-    print(proximity_measurement)# Read the proximity
+    print(proximity_measurement)
+    sleep(0.2)ment)# Read the proximity
     sleep(0.2)
