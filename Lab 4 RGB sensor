@@ -15,5 +15,4 @@ sleep(0.1)
 while True:
     proximity_measurement = apds9960.prox.proximityLevel
     print(proximity_measurement)
-    sleep(0.2)ment)# Read the proximity
     sleep(0.2)
