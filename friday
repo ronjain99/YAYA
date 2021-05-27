@@ -1,0 +1,522 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                                 #
+# __  __        ____       _           _          #
+# |  \/  |_ __  |  _ \ ___ | |__   ___ | |_ ___   #
+# | |\/| | '__| | |_) / _ \| '_ \ / _ \| __/ _ \  #
+# | |  | | |    |  _ < (_) | |_) | (_) | || (_) | #
+# |_|  |_|_|    |_| \_\___/|_.__/ \___/ \__\___/  #
+#                                                 #
+#                         Made with love & stress #
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+
+import machine
+import time
+import pyb
+from module.encodedmotor import EncodedMotor  # Motor control library
+from module.hcsr04 import HCSR04
+from module.ssd1306 import SSD1306_I2C
+
+# [------------------------ DEBUG FLAGS ------------------------] #
+
+DEBUG = 1
+BLACK = (3743, 3679, 3449, 3769, 4030)
+WHITE = (216,  242,  197,  235,  262)
+state = "start"
+
+time.sleep(1)  # Wait for hardware to come online
+
+# [----------------- INITIALIZE SENSOR OBJECTS -----------------] #
+
+# Boiler Plate: Motors
+motor_left = EncodedMotor('left', 'D8', 'D9', 'D5', 'D3')
+motor_right = EncodedMotor('right', 'D6', 'D7', 'D4', 'D2')
+
+# Boiler Plate: IR Sensors
+ir_01 = pyb.ADC(machine.Pin('A1'))
+ir_02 = pyb.ADC(machine.Pin('A2'))
+ir_03 = pyb.ADC(machine.Pin('A3'))
+ir_04 = pyb.ADC(machine.Pin('A4'))
+ir_05 = pyb.ADC(machine.Pin('A5'))
+
+# Boiler Plate: Ultrasonic Sensor
+ultrasonic_sensor = HCSR04('D13', 'D12')
+
+# Boiler Plate: Servo
+servo = pyb.Servo(1)
+
+btn = machine.Pin('PC13', machine.Pin.IN)
+
+oled = SSD1306_I2C(128, 64, machine.I2C(-1, scl=machine.Pin('PB9'), sda=machine.Pin('PB8')))
+
+# Greet the user, the sensors are now initialized
+print('Hello, world!')
+oled.text('Hello, world!', 0, 0)
+oled.text('I\'m Mr Roboto', 0, 10)
+oled.text('Readying I/O', 0, 20)
+oled.show()
+time.sleep(2)
+oled.fill(0)
+oled.show()
+
+# [------------------------- FUNCTIONS -------------------------] #
+
+def move_forward():
+    motor_left.motor.set_forwards()
+    motor_right.motor.set_forwards()
+
+    motor_left.move(68)
+    motor_right.move(68)
+
+def slight_left():
+    motor_left.motor.set_forwards()
+    motor_right.motor.set_forwards()
+
+    motor_left.move(66)
+    motor_right.move(70)
+
+def slight_right():
+    motor_left.motor.set_forwards()
+    motor_right.motor.set_forwards()
+
+    motor_left.move(70)
+    motor_right.move(66)
+
+def do_a_180():
+    motor_left.motor.set_forwards()
+    motor_right.motor.set_backwards()
+    motor_left.move(70)
+    motor_right.move(70)
+    time.sleep(0.9)
+
+def stop():
+    motor_left.move(0)
+    motor_right.move(0)
+
+
+def read_sensor(sensor, min, max):
+    """Reads the sensor value and normalises it to the calibration min/max values (white and black)
+    Args:
+        sensor (object): The IR sensor object
+        min (int): The minimum value
+        max (int): The maxmimum value
+    Returns:
+        float: The normalised value for the IR sensor
+    """
+    return float((sensor.read() - min) / (max - min))
+
+
+def calibrate_sensor():
+    """Calibrates the sensors for white and black values
+    Returns:
+        tuple: Calibration data for black and white
+    """
+    oled.text('Calibrating', 0, 0)
+    oled.text('sensor...', 0, 10)
+    oled.show()
+    time.sleep(1)
+    oled.fill(0)
+    oled.text('Calibrate black:', 0, 0)
+    oled.show()
+
+    print('Calibrating black')
+
+    while True:
+        oled.fill(0)
+
+        # Read the sensor values individually whilst on black line
+        black_01 = round(ir_01.read())
+        black_02 = round(ir_02.read())
+        black_03 = round(ir_03.read())
+        black_04 = round(ir_04.read())
+        black_05 = round(ir_05.read())
+
+        oled.text('Calibrate black:', 0, 0)
+        oled.text('Black 1 = {}'.format(black_01), 0, 10)
+        oled.text('Black 2 = {}'.format(black_02), 0, 20)
+        oled.text('Black 3 = {}'.format(black_03), 0, 30)
+        oled.text('Black 4 = {}'.format(black_04), 0, 40)
+        oled.text('Black 5 = {}'.format(black_05), 0, 50)
+        oled.show()
+
+        if not btn.value():
+            # Capture the sensor values and prepare them to return
+            black_value_01 = black_01
+            black_value_02 = black_02
+            black_value_03 = black_03
+            black_value_04 = black_04
+            black_value_05 = black_05
+
+            oled.fill(0)
+            oled.text('Calibrate black:', 0, 0)
+            oled.text('Done!', 0, 10)
+            oled.show()
+            break
+
+    time.sleep(3)
+    oled.fill(0)
+    oled.text('Calibrate white:', 0, 0)
+    oled.show()
+
+    print('Calibrate white')
+
+    while True:
+        oled.fill(0)
+
+        # Read the sensor values individually whilst on white paper
+        white_01 = round(ir_01.read())
+        white_02 = round(ir_02.read())
+        white_03 = round(ir_03.read())
+        white_04 = round(ir_04.read())
+        white_05 = round(ir_05.read())
+
+        oled.text('Calibrate white:', 0, 0)
+        oled.text('White 1 = {}'.format(white_01), 0, 10)
+        oled.text('White 2 = {}'.format(white_02), 0, 20)
+        oled.text('White 3 = {}'.format(white_03), 0, 30)
+        oled.text('White 4 = {}'.format(white_04), 0, 40)
+        oled.text('White 5 = {}'.format(white_05), 0, 50)
+        oled.show()
+
+        if not btn.value():
+            # Capture the sensor values and prepare them to return
+            white_value_01 = white_01
+            white_value_02 = white_02
+            white_value_03 = white_03
+            white_value_04 = white_04
+            white_value_05 = white_05
+
+            oled.fill(0)
+            oled.text('Calibrate white:', 0, 0)
+            oled.text('Done!', 0, 10)
+            oled.show()
+            break
+
+    time.sleep(1)
+    oled.fill(0)
+    oled.text('IR sensors', 0, 0)
+    oled.text('calibrated!', 0, 10)
+    oled.show()
+    time.sleep(3)
+
+    # Return the minimum and maximum values as tuples for use in calibration
+
+    return (black_value_01, black_value_02, black_value_03, black_value_04, black_value_05), (white_value_01, white_value_02, white_value_03, white_value_04, white_value_05)
+
+
+def read_sensors(calibration_black, calibration_white):
+    """Reads all sensor values using calibration data to provide an error value for where the line is currently positioned
+    Args:
+        calibration_black (tuple): Calibration data for black values
+        calibration_white (tuple): Calibration data for white values
+    Returns:
+        float: Error value of where the line currently is using a weighted mean
+    """
+    v_01 = read_sensor(ir_01, calibration_black[0], calibration_white[0])
+    v_02 = read_sensor(ir_02, calibration_black[1], calibration_white[1])
+    v_03 = read_sensor(ir_03, calibration_black[2], calibration_white[2])
+    v_04 = read_sensor(ir_04, calibration_black[3], calibration_white[3])
+    v_05 = read_sensor(ir_05, calibration_black[4], calibration_white[4])
+
+    # Weighted mean calculation, according to: https://en.wikipedia.org/wiki/Weighted_arithmetic_mean
+    error = ((v_01 * -3) + (v_02 * -2) + (v_03 * 1) + (v_04 * 2) + (v_05 * 3)) / (v_01 + v_02 + v_03 + v_04 + v_05)
+
+    return error
+
+
+def whitespace(calibration_black, calibration_white):
+    v_01 = read_sensor(ir_01, calibration_white[0], calibration_black[0])
+    v_02 = read_sensor(ir_02, calibration_white[1], calibration_black[1])
+    v_03 = read_sensor(ir_03, calibration_white[2], calibration_black[2])
+    v_04 = read_sensor(ir_04, calibration_white[3], calibration_black[3])
+    v_05 = read_sensor(ir_05, calibration_white[4], calibration_black[4])
+
+    return v_01 + v_02 + v_03 + v_04 + v_05
+
+
+def follow_line_pid(kP, kI, kD, duty, calibration_black, calibration_white, hallway, round_about_count=None):
+    """The robot follows a line according to a PID control loop and an array of IR sensors
+    Args:
+        kP (float): The proportional constant
+        kI (float): The integral constant
+        kD (float): The derivative constant
+        duty (float): The minimum duty cycle for the motors
+        calibration_black (tuple): The calibration data for black
+        calibration_white (tuple): The calibration data for white
+    """
+    I = 0
+    D = 0
+    pError = 0
+
+    motor_left.motor.set_forwards()
+    motor_right.motor.set_forwards()
+
+    servo.angle(0)
+
+    while True:
+        # Simple PID control loop, according to: https://en.wikipedia.org/wiki/PID_controller
+        P = read_sensors(calibration_black, calibration_white)
+        I = I + pError
+        D = P - pError
+
+        space = whitespace(calibration_black, calibration_white)
+
+        w1 = ir_01.read()
+        w2 = ir_02.read()
+        w3 = ir_03.read()
+        w4 = ir_04.read()
+        w5 = ir_05.read()
+        sum = w1 + w2 + w3 + w4 + w5
+
+        if sum < 1800:  # tweakable
+            stop()
+            oled.fill(0)
+            oled.text('linebreak', 0, 0)
+            oled.text('{}'.format(sum), 0, 10)
+            oled.show()
+            time.sleep(1)
+            servo.angle(90)
+            time.sleep(1)
+
+            if 0 < ultrasonic_sensor.distance_mm() < 225:
+                oled.fill(0)
+                oled.text('hallway', 0, 0)
+                oled.show()
+                return 'hallway'
+            else:
+                stop()
+                oled.fill(0)
+                oled.text('lost', 0, 30)
+                oled.show()
+                move_forward()
+                time.sleep(1)
+                stop()
+                return 'line'
+
+        if sum > 10500:  # tweakable
+            return 'roundabout'
+
+        dist = ultrasonic_sensor.distance_mm()
+
+        if 0 < dist < 200:
+            return 'enter_garage'
+
+        turn_rate = (kP * P) + (kI * I) + (kD * D)
+
+        # Print values to OLED for debugging
+        # if DEBUG:
+        #     oled.text('S = {}'.format(state), 0, 0)
+        #     oled.text('S {:.2f}'.format(space), 0, 10)
+        #     oled.text('{} {} {}'.format(kP, kI, kD), 0, 20)
+        #     oled.text('L Motor: {}'.format(duty - turn_rate), 0, 30)
+        #     oled.text('R Motor: {}'.format(duty + turn_rate), 0, 40)
+        #     oled.show()
+        # else:
+        #     oled.text('S = {}'.format(state), 0, 0)
+        #     oled.text('P: {}'.format(kP), 0, 10)
+        #     oled.text('I: {}'.format(kI), 0, 20)
+        #     oled.text('D: {}'.format(kD), 0, 30)
+        #     oled.show()
+
+        motor_left.move(duty - turn_rate)
+        motor_right.move(duty + turn_rate)
+
+        # Setting last error value to current value
+        pError = P
+        time.sleep(0.01)
+
+
+def roundabout(calibration_black, calibration_white):
+    space = whitespace(calibration_black, calibration_white)
+    stop()
+
+    oled.fill(0)
+    oled.text('sum = {}'.format(sum), 0, 20)
+    oled.text('roundabout', 0, 40)
+    oled.show()
+
+    time.sleep(1)
+    move_forward()
+    time.sleep(2)
+    stop()
+    time.sleep(5)
+    return 'line'
+
+
+def exit_garage(calibration_black, calibration_white):
+    servo.angle(0)
+
+    while True:
+        ir_array = [
+            read_sensor(ir_01, calibration_white[0], calibration_black[0]),
+            read_sensor(ir_02, calibration_white[1], calibration_black[1]),
+            read_sensor(ir_03, calibration_white[2], calibration_black[2]),
+            read_sensor(ir_04, calibration_white[3], calibration_black[3]),
+            read_sensor(ir_05, calibration_white[4], calibration_black[4])
+        ]
+
+        oled.fill(0)
+        oled.text('S = {}'.format(state), 0, 0)
+        oled.text('Exiting garage', 0, 10)
+        oled.show()
+
+        while ir_array[2] < 0.9:
+            ir_array = [
+                read_sensor(ir_01, calibration_white[0], calibration_black[0]),
+                read_sensor(ir_02, calibration_white[1], calibration_black[1]),
+                read_sensor(ir_03, calibration_white[2], calibration_black[2]),
+                read_sensor(ir_04, calibration_white[3], calibration_black[3]),
+                read_sensor(ir_05, calibration_white[4], calibration_black[4])
+            ]
+
+            move_forward()
+
+        oled.fill(0)
+        oled.text('S = {}'.format(state), 0, 0)
+        oled.text('Exited garage', 0, 10)
+        oled.text('Turning...', 0, 20)
+        oled.show()
+
+        move_forward()
+        time.sleep(0.5)
+        stop()
+        time.sleep(1)
+
+        ir_array = [
+            read_sensor(ir_01, calibration_white[0], calibration_black[0]),
+            read_sensor(ir_02, calibration_white[1], calibration_black[1]),
+            read_sensor(ir_03, calibration_white[2], calibration_black[2]),
+            read_sensor(ir_04, calibration_white[3], calibration_black[3]),
+            read_sensor(ir_05, calibration_white[4], calibration_black[4])
+        ]
+
+        motor_left.reverse()
+
+        while ir_array[2] < 0.2:
+            oled.fill(0)
+            oled.text('S = {}'.format(state), 0, 0)
+            oled.text('Exited garage', 0, 10)
+            oled.text('Turning...', 0, 20)
+            oled.text('Sensor {:.2f}'.format(ir_array[2]), 0, 30)
+            oled.show()
+
+            ir_array = [
+                read_sensor(ir_01, calibration_white[0], calibration_black[0]),
+                read_sensor(ir_02, calibration_white[1], calibration_black[1]),
+                read_sensor(ir_03, calibration_white[2], calibration_black[2]),
+                read_sensor(ir_04, calibration_white[3], calibration_black[3]),
+                read_sensor(ir_05, calibration_white[4], calibration_black[4])
+            ]
+
+            motor_left.move(65)
+            motor_right.move(65)
+
+        break
+
+    stop()
+    oled.fill(0)
+    oled.text('S = {}'.format(state), 0, 0)
+    oled.text('Exited garage', 0, 10)
+    oled.show()
+    time.sleep(3)
+
+    return "line"
+
+
+def enter_garage():
+        motor_left.move(70)
+        motor_right.move(0)
+        time.sleep(.95)
+        motor_left.move(0)
+        motor_right.move(0)
+        while True:
+            for desired_angle in range(-90, 0, +5):  # Anticlockwise
+                servo.angle(desired_angle)
+                time.sleep(0.01)
+            distfront = ultrasonic_sensor.distance_mm()
+            if distfront > 0 and distfront < 120:
+                stop()
+                break
+            else:
+                move_forward()
+            for desired_angle in range(0, 90, +5):  # Anticlockwise
+                servo.angle(desired_angle)
+                time.sleep(0.01)
+            distleft = ultrasonic_sensor.distance_mm()
+            if distleft > 0 and distleft < 150:
+                slight_right()
+            for desired_angle in range(90, 0, -5):  # Clockwise
+                servo.angle(desired_angle)
+                time.sleep(0.01)
+            distfront = ultrasonic_sensor.distance_mm()
+            if distfront > 0 and distfront < 120:
+                stop()
+                break
+            for desired_angle in range(0, -90, -5):  # Clockwise
+                servo.angle(desired_angle)
+                time.sleep(0.01)
+            distright = ultrasonic_sensor.distance_mm()
+            if distright > 0 and distright < 200:
+                slight_left()
+        stop()
+        return 1
+
+
+def hallway(calibration_black, calibration_white):  # if line-break detected, stop use ultrasonic to detect if we are in a hallway, proceed
+        while True:
+            oled.fill(0)
+            dist = ultrasonic_sensor.distance_mm()
+            space = whitespace(calibration_black, calibration_white)
+
+            if dist > 100:
+                slight_left()
+            if 0 < dist < 100:
+                slight_right()
+            if dist == 100:
+                move_forward()
+
+            oled.text('S = {}'.format(state), 0, 0)
+            oled.text('D: {:.2f}'.format(dist), 0, 10)
+            oled.text('S: {:.2f}'.format(space), 0, 20)
+            oled.show()
+
+            w1 = ir_01.read()
+            w2 = ir_02.read()
+            w3 = ir_03.read()
+            w4 = ir_04.read()
+            w5 = ir_05.read()
+
+
+            if w1>1000 or w2>1000 or w3>1000 or w4>1000 or w5>1000:
+                stop()
+                time.sleep(1)
+                servo.angle(0)
+                time.sleep(1)
+                return 'line'
+
+# [------------------ BEGIN AUTONOMOUS CONTROL ------------------] #
+
+# This should always run first
+hallway_count = 0
+roundaboutcount = 0
+servo.angle(0)
+
+if not DEBUG:
+    BLACK, WHITE = calibrate_sensor()
+
+# Possible States the robot could be in
+while True:
+    if state == 'start':
+        state = exit_garage(BLACK, WHITE)
+    elif state == 'line':
+        state = follow_line_pid(15, 0, 0, 64, BLACK, WHITE, hallway_count)
+    elif state == 'hallway':
+        hallway_count += 1
+        state = hallway(BLACK, WHITE)
+    elif state == 'roundabout':
+        roundaboutcount += 1
+        if roundaboutcount == 2:
+            do_a_180()
+            state = follow_line_pid(15, 0, 0, 64, BLACK, WHITE, hallway_count)
+        state = roundabout(BLACK, WHITE)
+    elif state == 'enter_garage':
+            state = enter_garage()
