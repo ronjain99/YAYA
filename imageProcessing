@@ -1,0 +1,212 @@
+import matplotlib.image as mpimg
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.ndimage as scnd
+
+def loadImage(filename):
+    img = mpimg.imread(filename)
+    if type(img[0, 0, 0]) == np.float32:
+        n = len(img)
+        for i in range(0, n):
+            for c in range(0, n):
+                for t in range(0, 3):
+                    img[i, c, t] = img[i, c, t] * 255
+    img_64 = np.float64(img)
+    [rows, cols, colourChannels] = img_64.shape
+    if colourChannels == 4:
+        img_64 = img_64[:,:,0:3]
+    return img_64
+
+def saveImage(imageData, filename, scale=False, format="RGB"):
+    if format == "HSL":
+        imageData = hsl2rgb(imageData)
+    if scale == True:
+        imageData = imageData - np.min(imageData)
+        imageData = imageData/np.max(imageData)*255
+    else:
+        imageData[imageData > 255] = 255
+        imageData[imageData < 0] = 0
+    plt.imsave(filename, np.uint8(np.round(imageData)))
+    return None
+
+def rgb2hsl(imageData):
+    [rows, cols, colourlength] = imageData.shape
+    for row in range(0,rows):
+        for col in range(0, cols):
+            [R2,G2,B2] = np.array(imageData[row,col,:])/255
+            cmax = np.max(np.array((R2,G2,B2)))
+            cmin = np.min(np.array((R2,G2,B2)))
+            D = cmax - cmin
+            if D == 0:
+                H = 0
+            elif cmax == R2:
+                H = 60*np.mod((G2 - B2)/D, 6)
+            elif cmax == G2:
+                H = 60 * ((B2 - R2) / D + 2)
+            else:
+                H = 60 * ((R2 - G2) / D + 4)
+            L = (cmax + cmin) / 2
+            if D == 0:
+                S = 0
+            else:
+                S = D / (1 - np.abs(2 * L - 1))
+            imageData[row,col,:] = (H,S,L)
+    return imageData
+
+def hsl2rgb(imageData):
+    [rows, cols, hsl] = imageData.shape
+    for row in range(0, rows):
+        for col in range(0, cols):
+            [H,S,L] = imageData[row,col,:]
+            C = (1 - np.abs(2*L - 1)) * S
+            X = C * (1 - np.abs(np.mod(H/60, 2) - 1))
+            m = L - (C/2)
+            if 0 <= H < 60:
+                (R2,G2,B2) = (C,X,0)
+            elif 60 <= H < 120:
+                (R2,G2,B2) = (X, C, 0)
+            elif 120 <= H < 180:
+                (R2,G2,B2) = (0, C, X)
+            elif 180 <= H < 240:
+                (R2, G2, B2) = (0, X, C)
+            elif 240 <= H < 300:
+                (R2, G2, B2) = (X, 0, C)
+            else:
+                (R2, G2, B2) = (C, 0, X)
+        # (R, G, B) = (((R2+m)*255)(), ((G2 +m)*255), ((B2 + m)*255))
+            (R, G, B) = ((R2 + m) * 255, (G2 + m) * 255, (B2 + m) * 255)
+            imageData[row, col, :] = (R,G,B)
+    return imageData
+
+
+def showImage(imageData):
+    tmp = np.copy(imageData)
+    tmp[tmp<0] = 0
+    tmp[tmp>255] = 255
+    tmp = np.uint8(tmp)
+    plt.imshow(tmp)
+    plt.axis('off')
+
+def brightness(imageData,b,changeType='absolute'):
+    if changeType == 'relative':
+        imageData = imageData*b
+    elif changeType == 'absolute':
+        imageData += b
+    else:
+        print('Error: changeType value must either be "absolute" or "relative"')
+    return imageData
+
+def contrast(imageData,c):
+    imageData = c*(imageData - 127.5) + 127.5
+    return imageData
+
+def saturation(imageData,amount):
+    (rows,cols, hslvalues) = imageData.shape
+    for row in range(0,rows):
+        for col in range(0,cols):
+            imageData[row,col,1] = imageData[row,col,1]*amount
+    return imageData
+
+def toneMap(imageData, H, S):
+    (rows, cols, hslvalues) = imageData.shape
+    for row in range(0,rows):
+        for col in range(0,cols):
+            imageData[row,col,0] = H
+            imageData[row,col,1] = S
+    return imageData
+def crop(imageData, top, bottom, left, right):
+    (rows, cols, colourvals) = imageData.shape
+
+    if top < bottom and left < right:
+        if 0<=top<rows and 0<=bottom<rows and 0<=left<cols and 0<=right<cols :
+            imageData = imageData[top:bottom, left:right,:]
+    return imageData
+
+def saturated(imageData, type='white',format='RGB'):
+    (rows, cols, colourvals) = imageData.shape
+    if format == 'RGB':
+        if type == 'white':
+            white = imageData[imageData>254.5]
+            percentage = (np.size(white))/(np.size(imageData))*100
+            return percentage
+        if type == 'black':
+            black = imageData[imageData<0.5]
+            percentage = (np.size(black)/np.size(imageData))*100
+            return percentage
+    if format == 'HSL':
+        if type == 'white':
+            L = imageData[:, :, 2]
+            L = L[L >0.99]
+            percentage = ((3 * np.size(L)) / np.size(imageData)) * 100
+            return percentage
+        if type == 'black':
+            L = imageData[:,:,2]
+            L = L[L<0.01]
+            percentage = ((3*np.size(L))/np.size(imageData))*100
+            return percentage
+
+def histogram(imageData, scale="linear", channel="L", bins=255, format="RGB"):
+    if channel == 'L':
+        if format == 'RGB':
+            imageData = rgb2hsl(imageData)
+        L = imageData[:,:,2]
+        L = L.reshape(-1)
+        if scale == 'linear':
+            return plt.hist(L,bins)
+        if scale == 'log':
+            return plt.hist(L, bins, log=True)
+
+    if channel == 'R':
+        if format == 'HSL':
+            imageData = hsl2rgb(imageData)
+        L = imageData[:, :, 0]
+        L = L.reshape(-1)
+        if scale == 'linear':
+            return plt.hist(L, bins)
+        if scale == 'log':
+            return plt.hist(L, bins, log=True)
+
+    if channel == 'G':
+        if format == 'HSL':
+            imageData = hsl2rgb(imageData)
+        L = imageData[:, :, 1]
+        L = L.reshape(-1)
+        if scale == 'linear':
+            return plt.hist(L, bins)
+        if scale == 'log':
+            return plt.hist(L, bins, log=True)
+    if channel == 'B':
+        if format == 'HSL':
+            imageData = hsl2rgb(imageData)
+        L = imageData[:, :, 2]
+        L = L.reshape(-1)
+        if scale == 'linear':
+            return plt.hist(L, bins)
+        if scale == 'log':
+            return plt.hist(L, bins, log=True)
+
+
+def unsharpMask(imageData, radius=5, amount=2, format="RGB"):
+    (rows,cols,colorvals) = imageData.shape
+    if format == 'HSL':
+        imageData = hsl2rgb(imageData)
+    imageDataR = imageData[:,:,0]
+    imageDataG = imageData[:,:,1]
+    imageDataB = imageData[:,:,2]
+    blurredR = scnd.gaussian_filter(imageDataR,sigma=radius/3)
+    blurredG = scnd.gaussian_filter(imageDataG,sigma=radius/3)
+    blurredB = scnd.gaussian_filter(imageDataB,sigma=radius/3)
+    Blurred = np.zeros([rows,cols,colorvals])
+    Blurred[:,:,0] = blurredR
+    Blurred[:,:,1] = blurredG
+    Blurred[:,:,2] = blurredB
+    Sharpened = imageData + (imageData - Blurred)*amount
+    return Sharpened
+
+
+
+
+
+
+
+
